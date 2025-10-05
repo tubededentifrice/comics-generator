@@ -1,0 +1,251 @@
+{
+  "service": "AIChatService",
+  "version": "1.0.0",
+  "description": "Service for managing AI chat conversations within asset editor",
+  "methods": [
+    {
+      "name": "sendMessage",
+      "description": "Sends user message with optional images to AI provider, returns assistant response",
+      "input": {
+        "text": {
+          "type": "String",
+          "description": "User message text",
+          "required": true,
+          "constraints": {
+            "maxLength": 5000
+          }
+        },
+        "images": {
+          "type": "[URL]",
+          "description": "Attached images (use optimized versions for API)",
+          "required": false,
+          "constraints": {
+            "maxCount": 10
+          }
+        },
+        "provider": {
+          "type": "AIProvider",
+          "description": "Selected AI model provider (Midjourney, DALL-E 3, Gemini)",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "ChatMessage",
+        "description": "Assistant response with generated images"
+      },
+      "throws": [
+        {
+          "type": "AIChatError.noAPIKey",
+          "condition": "No API key configured for provider"
+        },
+        {
+          "type": "AIChatError.invalidAPIKey",
+          "condition": "API key validation failed"
+        },
+        {
+          "type": "AIChatError.networkError",
+          "condition": "Network request failed"
+        },
+        {
+          "type": "AIChatError.timeout",
+          "condition": "Request exceeded 60s timeout"
+        },
+        {
+          "type": "AIChatError.rateLimited",
+          "condition": "API rate limit exceeded"
+        },
+        {
+          "type": "AIChatError.generationFailed",
+          "condition": "AI generation failed (content policy, etc.)"
+        }
+      ],
+      "behavior": {
+        "timeout": "60 seconds (per FR-102)",
+        "retries": "None (user controls via timeout dialog)",
+        "imageOptimization": "Uses optimized versions (1024px) for API calls"
+      },
+      "performance": {
+        "target": "API-dependent (typically 10-30s)",
+        "constraint": "Async execution with timeout handling"
+      }
+    },
+    {
+      "name": "loadHistory",
+      "description": "Loads chat history for an asset from disk",
+      "input": {
+        "asset": {
+          "type": "Asset",
+          "description": "Asset whose chat history to load",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "[ChatMessage]",
+        "description": "Array of messages in chronological order"
+      },
+      "throws": [
+        {
+          "type": "ChatHistoryError.fileNotFound",
+          "condition": "No chat history file exists (returns empty array)"
+        },
+        {
+          "type": "ChatHistoryError.corruptData",
+          "condition": "JSON parsing failed"
+        },
+        {
+          "type": "ChatHistoryError.versionMismatch",
+          "condition": "History file version incompatible"
+        }
+      },
+      "behavior": {
+        "emptyHistory": "Returns [] if no history file exists (not error)",
+        "ordering": "Messages sorted by timestamp ascending",
+        "caching": "No caching (always reads from disk)"
+      },
+      "performance": {
+        "target": "<50ms for 100 messages",
+        "constraint": "JSON decoding with ISO8601 dates"
+      }
+    },
+    {
+      "name": "saveHistory",
+      "description": "Saves chat history to disk for an asset",
+      "input": {
+        "messages": {
+          "type": "[ChatMessage]",
+          "description": "Complete message array to save",
+          "required": true
+        },
+        "asset": {
+          "type": "Asset",
+          "description": "Asset to save history for",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "Void"
+      },
+      "throws": [
+        {
+          "type": "ChatHistoryError.encodingFailed",
+          "condition": "JSON encoding failed"
+        },
+        {
+          "type": "ChatHistoryError.writeError",
+          "condition": "Cannot write to .chat/history.json"
+        },
+        {
+          "type": "ChatHistoryError.insufficientStorage",
+          "condition": "Disk full"
+        }
+      },
+      "sideEffects": [
+        "Creates .chat/ directory if missing",
+        "Writes .chat/history.json with pretty-printed JSON",
+        "Updates asset.chatHistoryPath if previously nil"
+      ],
+      "behavior": {
+        "format": "Pretty-printed JSON for Git-friendliness",
+        "atomicity": "Atomic write (write to temp, then move)"
+      },
+      "performance": {
+        "target": "<50ms for 100 messages",
+        "constraint": "Async on background queue"
+      }
+    },
+    {
+      "name": "clearHistory",
+      "description": "Deletes chat history file for an asset",
+      "input": {
+        "asset": {
+          "type": "Asset",
+          "description": "Asset whose history to clear",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "Void"
+      },
+      "throws": [
+        {
+          "type": "ChatHistoryError.deleteError",
+          "condition": "Cannot delete history file"
+        }
+      ],
+      "sideEffects": [
+        "Deletes .chat/history.json file",
+        "Sets asset.chatHistoryPath to nil",
+        "Preserves .chat/ directory (may contain temp files)"
+      ],
+      "behavior": {
+        "missingFile": "No error if file doesn't exist (idempotent)"
+      }
+    },
+    {
+      "name": "importGeneratedImage",
+      "description": "Imports AI-generated image from chat into asset's reference collection",
+      "input": {
+        "imageURL": {
+          "type": "URL",
+          "description": "URL of generated image (from ChatMessage.generatedImages)",
+          "required": true
+        },
+        "asset": {
+          "type": "Asset",
+          "description": "Asset to import into",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "ImageReference",
+        "description": "Created image reference"
+      },
+      "throws": [
+        {
+          "type": "AssetImportError.imageLoadFailed",
+          "condition": "Cannot read generated image"
+        },
+        {
+          "type": "AssetImportError.assetFull",
+          "condition": "Asset at 50-image limit"
+        }
+      },
+      "sideEffects": [
+        "Copies image to originals/ folder",
+        "Creates optimized version in optimized/ folder",
+        "Adds to asset with source: .generated"
+      ],
+      "behavior": {
+        "sourceTracking": "ImageReference.source set to .generated"
+      }
+    }
+  ],
+  "dependencies": [
+    "Foundation",
+    "Network",
+    "CryptoKit (for secure API key storage)"
+  ],
+  "constitutional_compliance": {
+    "principle_I": "Chat history stored as JSON (Git-compatible)",
+    "principle_IV": "Contract tests required before implementation",
+    "principle_V": "Performance targets specified",
+    "principle_VI": "No third-party HTTP libraries (use URLSession)"
+  },
+  "external_dependencies": {
+    "midjourney_api": {
+      "endpoint": "https://api.midjourney.com/v1/imagine",
+      "auth": "Bearer token",
+      "timeout": "60s"
+    },
+    "openai_api": {
+      "endpoint": "https://api.openai.com/v1/images/generations",
+      "auth": "Bearer token",
+      "timeout": "60s"
+    },
+    "gemini_api": {
+      "endpoint": "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-image",
+      "auth": "API key query param",
+      "timeout": "60s"
+    }
+  }
+}
