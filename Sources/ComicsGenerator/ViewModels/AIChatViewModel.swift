@@ -4,11 +4,11 @@ import Combine
 /// ViewModel for AI chat interface
 @MainActor
 public class AIChatViewModel: ObservableObject {
-    @Published var messages: [ChatMessage] = []
-    @Published var inputText: String = ""
-    @Published var isGenerating: Bool = false
-    @Published var errorMessage: String?
-    @Published var attachedImages: [URL] = []
+    @Published public var messages: [ChatMessage] = []
+    @Published public var inputText: String = ""
+    @Published public var isGenerating: Bool = false
+    @Published public var errorMessage: String?
+    @Published public var attachedImages: [URL] = []
 
     private let aiChatService: AIChatService
     private var currentAsset: Asset?
@@ -18,7 +18,7 @@ public class AIChatViewModel: ObservableObject {
     }
 
     /// Loads chat history for an asset
-    func loadHistory(for asset: Asset) async {
+    public func loadHistory(for asset: Asset) async {
         self.currentAsset = asset
         let service = self.aiChatService
 
@@ -38,7 +38,7 @@ public class AIChatViewModel: ObservableObject {
     }
 
     /// Sends a message to the AI provider
-    func sendMessage(provider: AIChatService.AIProvider = .dalle3) async {
+    public func sendMessage(provider: AIChatService.AIProvider = .dalle3) async {
         guard !inputText.isEmpty || !attachedImages.isEmpty else { return }
         guard let asset = currentAsset else { return }
 
@@ -89,7 +89,7 @@ public class AIChatViewModel: ObservableObject {
     }
 
     /// Saves chat history for the current asset
-    func saveHistory(for asset: Asset) async throws {
+    public func saveHistory(for asset: Asset) async throws {
         let messagesToSave = await MainActor.run { self.messages }
         let service = self.aiChatService
         try await Task.detached {
@@ -98,7 +98,7 @@ public class AIChatViewModel: ObservableObject {
     }
 
     /// Clears chat history
-    func clearHistory() async {
+    public func clearHistory() async {
         guard let asset = currentAsset else { return }
         let service = self.aiChatService
 
@@ -118,7 +118,7 @@ public class AIChatViewModel: ObservableObject {
     }
 
     /// Imports a generated image into the asset
-    func importImage(_ imageURL: URL, into asset: Asset) async {
+    public func importImage(_ imageURL: URL, into asset: Asset) async {
         let service = self.aiChatService
         do {
             let _ = try await Task.detached {
@@ -136,7 +136,7 @@ public class AIChatViewModel: ObservableObject {
     }
 
     /// Attaches an image to the next message
-    func attachImage(_ url: URL) {
+    public func attachImage(_ url: URL) {
         guard attachedImages.count < 10 else {
             errorMessage = "Cannot attach more than 10 images"
             return
@@ -145,7 +145,7 @@ public class AIChatViewModel: ObservableObject {
     }
 
     /// Removes an attached image
-    func removeAttachedImage(_ url: URL) {
+    public func removeAttachedImage(_ url: URL) {
         attachedImages.removeAll { $0 == url }
     }
 }

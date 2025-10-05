@@ -26,7 +26,11 @@ A macOS and iPadOS application for creating comic books with Apple Pencil suppor
 
 ## Quick Start
 
-### Building on Your Mac
+> 📖 **New to the project?** See [QUICKSTART.md](QUICKSTART.md) for a 5-minute guide
+>
+> 🛠 **Using Xcode?** See [XCODE_SETUP.md](XCODE_SETUP.md) for detailed Xcode instructions
+
+### Building and Running the App
 
 1. **Clone the Repository**
    ```bash
@@ -45,16 +49,21 @@ A macOS and iPadOS application for creating comic books with Apple Pencil suppor
    - Xcode will automatically fetch dependencies (Yams for YAML parsing)
    - Wait for "Package Resolution" to complete (check status bar)
 
-4. **Select Build Target**
-   - Choose "ComicsGenerator" scheme
-   - Select "My Mac" or an iOS Simulator as destination
+4. **Select the App Target**
+   - In Xcode, select the **"ComicsGeneratorApp"** scheme from the scheme selector (top bar)
+   - Select "My Mac" as the destination
 
-5. **Build the Project**
+5. **Run the App**
+
+   **In Xcode:**
+   - Click the "Run" button (▶️) or press **⌘R**
+   - The app will launch showing three tabs: Import, AI Chat, and Export PDF
+
+   **From Command Line:**
    ```bash
-   # Command line
+   # Build and run the executable
    swift build
-
-   # Or in Xcode: Product → Build (⌘B)
+   .build/debug/ComicsGeneratorApp
    ```
 
 6. **Run Tests**
@@ -65,16 +74,27 @@ A macOS and iPadOS application for creating comic books with Apple Pencil suppor
    # Or in Xcode: Product → Test (⌘U)
    ```
 
+### Demo App Features
+
+The ComicsGeneratorApp provides a demonstration UI for testing the library:
+
+- **Import Tab**: Test the asset import workflow
+- **AI Chat Tab**: Test AI chat service (requires API key)
+- **Export PDF Tab**: Test PDF export functionality
+
+Note: This is a demo app for testing the library. For production use, integrate the ComicsGenerator library into your own app.
+
 ### Project Structure
 
 ```
 comics-generator/
 ├── Sources/
-│   └── ComicsGenerator/
-│       ├── Models/              # Data models (Asset, ImageReference, etc.)
-│       ├── Services/            # Business logic (PDF, Import, AI Chat)
-│       ├── ViewModels/          # SwiftUI view models
-│       └── Views/               # SwiftUI views
+│   ├── ComicsGenerator/        # Main library
+│   │   ├── Models/             # Data models (Asset, ImageReference, etc.)
+│   │   ├── Services/           # Business logic (PDF, Import, AI Chat)
+│   │   └── ViewModels/         # SwiftUI view models
+│   └── ComicsGeneratorApp/     # Demo macOS app
+│       └── main.swift          # SwiftUI app entry point
 ├── Tests/
 │   └── ComicsGeneratorTests/
 │       ├── Unit/               # Service contract tests
@@ -90,17 +110,37 @@ comics-generator/
 ### Running Locally
 
 ```bash
-# Build and run (creates library)
+# Build the library
 swift build
 
-# Run tests
+# Build and run the demo app
+swift build && .build/debug/ComicsGeneratorApp
+
+# Run all tests (30 tests)
 swift test
 
-# Run specific test
+# Run specific test suite
 swift test --filter PDFExportServiceTests
 
-# Generate Xcode project (optional)
-swift package generate-xcodeproj
+# Build for release
+swift build -c release
+```
+
+### Xcode Development
+
+```bash
+# Open in Xcode
+open Package.swift
+
+# Select scheme:
+# - "ComicsGenerator" - Build library only
+# - "ComicsGeneratorApp" - Run the demo app
+
+# Useful shortcuts:
+# ⌘R - Run app
+# ⌘B - Build
+# ⌘U - Run tests
+# ⌘. - Stop
 ```
 
 ### Code Organization
@@ -277,6 +317,69 @@ xcrun stapler staple "ComicsGenerator-1.0.dmg"
 - [ ] Pricing and availability
 - [ ] TestFlight testing completed
 - [ ] App Review information
+
+## Using the Library in Your Project
+
+### Swift Package Manager Integration
+
+Add ComicsGenerator as a dependency in your `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/yourusername/comics-generator.git", from: "1.0.0")
+],
+targets: [
+    .target(
+        name: "YourApp",
+        dependencies: ["ComicsGenerator"]
+    )
+]
+```
+
+### Xcode Project Integration
+
+1. **File → Add Packages...**
+2. Enter repository URL: `https://github.com/yourusername/comics-generator.git`
+3. Select version and add to your target
+
+### Basic Usage Example
+
+```swift
+import ComicsGenerator
+
+// Import images into an asset
+let importService = AssetImportService()
+let asset = Asset(name: "Hero Character", scope: .root)
+
+Task {
+    let imageURLs = [URL(fileURLWithPath: "/path/to/image.png")]
+    let references = try await importService.importImages(imageURLs: imageURLs, asset: asset)
+    print("Imported \(references.count) images")
+}
+
+// Export album to PDF
+let pdfService = PDFExportService()
+let album = Album(name: "Issue 1", pages: [...])
+let options = PDFExportOptions(
+    seriesName: "My Series",
+    albumName: "Issue 1",
+    outputURL: URL(fileURLWithPath: "/output/issue-1.pdf")
+)
+
+Task {
+    let outputURL = try await pdfService.exportAlbum(album: album, options: options)
+    print("Exported to: \(outputURL.path)")
+}
+
+// Use AI chat service
+let chatService = AIChatService(apiKey: "your-api-key")
+let message = try chatService.sendMessage(
+    text: "Generate a superhero character",
+    images: [],
+    provider: .dalle3
+)
+print("Generated images: \(message.generatedImages.count)")
+```
 
 ## Configuration
 

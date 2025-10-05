@@ -3,13 +3,13 @@ import Foundation
 /// Configuration for PDF export operation
 public struct PDFExportOptions: Codable {
     public let resolution: Int
-    let includeMetadata: Bool
+    public let includeMetadata: Bool
     public let seriesName: String
     public let albumName: String
     public let pageRange: PageRange
     public let outputURL: URL
 
-    init(
+    public init(
         resolution: Int = 300,
         includeMetadata: Bool = true,
         seriesName: String,
@@ -50,7 +50,7 @@ public enum PageRange: Codable, Equatable {
         case pageIndex
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(String.self, forKey: .type)
 
@@ -69,7 +69,7 @@ public enum PageRange: Codable, Equatable {
         }
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         switch self {

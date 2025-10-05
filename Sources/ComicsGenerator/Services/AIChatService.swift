@@ -29,7 +29,7 @@ public class AIChatService {
         }
     }
 
-    enum AIProvider {
+    public enum AIProvider {
         case midjourney
         case dalle3
         case gemini

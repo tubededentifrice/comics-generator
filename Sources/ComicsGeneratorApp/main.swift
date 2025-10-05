@@ -74,7 +74,7 @@ struct AssetImportView: View {
                 // For now, just demonstrate the functionality
                 let demoAsset = Asset(id: UUID(), name: "Demo Asset", scope: .root)
                 Task {
-                    await viewModel.importImages(imageURLs: [], asset: demoAsset)
+                    await viewModel.importImages([], into: demoAsset)
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -119,13 +119,15 @@ struct AIChatView: View {
                     .textFieldStyle(.roundedBorder)
                     .disabled(viewModel.isGenerating)
 
-                Button("Send") {
+                Button(action: {
                     let text = messageText
                     messageText = ""
                     let demoAsset = Asset(id: UUID(), name: "Demo Asset", scope: .root)
                     Task {
                         await viewModel.sendMessage(provider: .dalle3)
                     }
+                }) {
+                    Text("Send")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(messageText.isEmpty || viewModel.isGenerating)
@@ -224,7 +226,9 @@ struct PDFExportView: View {
                     ]
                 )
                 Task {
-                    await viewModel.exportAlbum(album: demoAlbum)
+                    let outputURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("demo-album.pdf")
+                    await viewModel.exportAlbum(demoAlbum, to: outputURL)
                 }
             }
             .buttonStyle(.borderedProminent)

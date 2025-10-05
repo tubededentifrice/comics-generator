@@ -8,11 +8,11 @@ public struct Asset: Codable, Identifiable {
     public let promptText: String
     public let originalImages: [ImageReference]
     public let optimizedImages: [ImageReference]
-    let chatHistoryPath: URL?
-    let createdAt: Date
-    let updatedAt: Date
+    public let chatHistoryPath: URL?
+    public let createdAt: Date
+    public let updatedAt: Date
 
-    init(
+    public init(
         id: UUID = UUID(),
         name: String,
         scope: AssetScope,

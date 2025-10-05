@@ -4,10 +4,10 @@ import Combine
 /// ViewModel for asset import operations
 @MainActor
 public class AssetImportViewModel: ObservableObject {
-    @Published var isImporting: Bool = false
-    @Published var importedCount: Int = 0
-    @Published var errorMessage: String?
-    @Published var successMessage: String?
+    @Published public var isImporting: Bool = false
+    @Published public var importedCount: Int = 0
+    @Published public var errorMessage: String?
+    @Published public var successMessage: String?
 
     private let assetImportService: AssetImportService
 
@@ -16,7 +16,7 @@ public class AssetImportViewModel: ObservableObject {
     }
 
     /// Imports images from file URLs into an asset
-    func importImages(_ imageURLs: [URL], into asset: Asset) async {
+    public func importImages(_ imageURLs: [URL], into asset: Asset) async {
         isImporting = true
         errorMessage = nil
         successMessage = nil
@@ -47,7 +47,7 @@ public class AssetImportViewModel: ObservableObject {
     }
 
     /// Removes an image from an asset
-    func removeImage(_ imageReference: ImageReference, from asset: Asset) async {
+    public func removeImage(_ imageReference: ImageReference, from asset: Asset) async {
         do {
             try await Task.detached {
                 try self.assetImportService.removeImage(imageReference: imageReference, asset: asset)
@@ -64,7 +64,7 @@ public class AssetImportViewModel: ObservableObject {
     }
 
     /// Resets the view model state
-    func reset() {
+    public func reset() {
         isImporting = false
         importedCount = 0
         errorMessage = nil

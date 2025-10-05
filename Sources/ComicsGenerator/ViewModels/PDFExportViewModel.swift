@@ -4,10 +4,11 @@ import Combine
 /// ViewModel for PDF export operations
 @MainActor
 public class PDFExportViewModel: ObservableObject {
-    @Published var isExporting: Bool = false
-    @Published var progress: Double = 0.0
-    @Published var errorMessage: String?
-    @Published var successMessage: String?
+    @Published public var isExporting: Bool = false
+    @Published public var progress: Double = 0.0
+    @Published public var errorMessage: String?
+    @Published public var successMessage: String?
+    @Published public var lastExportURL: URL?
 
     private let pdfExportService: PDFExportService
 
@@ -16,7 +17,7 @@ public class PDFExportViewModel: ObservableObject {
     }
 
     /// Exports an album to PDF
-    func exportAlbum(_ album: Album, to outputURL: URL) async {
+    public func exportAlbum(_ album: Album, to outputURL: URL) async {
         isExporting = true
         errorMessage = nil
         successMessage = nil
@@ -36,6 +37,7 @@ public class PDFExportViewModel: ObservableObject {
 
             await MainActor.run {
                 self.progress = 1.0
+                self.lastExportURL = resultURL
                 self.successMessage = "PDF exported successfully to \(resultURL.lastPathComponent)"
                 self.isExporting = false
             }
@@ -48,7 +50,7 @@ public class PDFExportViewModel: ObservableObject {
     }
 
     /// Exports a single page to PDF
-    func exportPage(_ page: Page, albumName: String, to outputURL: URL) async {
+    public func exportPage(_ page: Page, albumName: String, to outputURL: URL) async {
         isExporting = true
         errorMessage = nil
         successMessage = nil
@@ -68,6 +70,7 @@ public class PDFExportViewModel: ObservableObject {
 
             await MainActor.run {
                 self.progress = 1.0
+                self.lastExportURL = resultURL
                 self.successMessage = "Page exported successfully"
                 self.isExporting = false
             }
@@ -80,10 +83,11 @@ public class PDFExportViewModel: ObservableObject {
     }
 
     /// Resets the view model state
-    func reset() {
+    public func reset() {
         isExporting = false
         progress = 0.0
         errorMessage = nil
         successMessage = nil
+        lastExportURL = nil
     }
 }
