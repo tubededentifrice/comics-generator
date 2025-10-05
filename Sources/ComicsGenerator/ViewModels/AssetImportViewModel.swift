@@ -3,7 +3,7 @@ import Combine
 
 /// ViewModel for asset import operations
 @MainActor
-class AssetImportViewModel: ObservableObject {
+public class AssetImportViewModel: ObservableObject {
     @Published var isImporting: Bool = false
     @Published var importedCount: Int = 0
     @Published var errorMessage: String?
@@ -11,7 +11,7 @@ class AssetImportViewModel: ObservableObject {
 
     private let assetImportService: AssetImportService
 
-    init(assetImportService: AssetImportService = AssetImportService()) {
+    public init(assetImportService: AssetImportService = AssetImportService()) {
         self.assetImportService = assetImportService
     }
 

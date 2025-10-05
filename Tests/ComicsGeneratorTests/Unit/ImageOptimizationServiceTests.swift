@@ -1,5 +1,7 @@
 import XCTest
 import CoreGraphics
+import ImageIO
+import UniformTypeIdentifiers
 @testable import ComicsGenerator
 
 /// Contract tests for ImageOptimizationService
@@ -28,7 +30,6 @@ final class ImageOptimizationServiceTests: XCTestCase {
         // Given: Large image (2048x1536)
         let sourceURL = createTestImage(name: "large.png", size: CGSize(width: 2048, height: 1536))
 
-        XCTExpectFailure("ImageOptimizationService not implemented yet - TDD phase")
 
         // When: Optimizing to 1024px
         let service = ImageOptimizationService()
@@ -52,7 +53,6 @@ final class ImageOptimizationServiceTests: XCTestCase {
         let landscapeURL = createTestImage(name: "landscape.jpg", size: CGSize(width: 1920, height: 1080))
         let portraitURL = createTestImage(name: "portrait.jpg", size: CGSize(width: 1080, height: 1920))
 
-        XCTExpectFailure("ImageOptimizationService not implemented yet - TDD phase")
 
         let service = ImageOptimizationService()
 
@@ -74,7 +74,6 @@ final class ImageOptimizationServiceTests: XCTestCase {
         // Given: Non-existent or corrupt image file
         let invalidURL = tempDirectoryURL.appendingPathComponent("nonexistent.png")
 
-        XCTExpectFailure("ImageOptimizationService not implemented yet - TDD phase")
 
         // When/Then: Should throw invalidSource error
         let service = ImageOptimizationService()
@@ -92,7 +91,6 @@ final class ImageOptimizationServiceTests: XCTestCase {
         // Given: Test image
         let sourceURL = createTestImage(name: "perf-test.png", size: CGSize(width: 4096, height: 3072))
 
-        XCTExpectFailure("ImageOptimizationService not implemented yet - TDD phase")
 
         // When: Measuring optimization time
         let service = ImageOptimizationService()
@@ -109,45 +107,47 @@ final class ImageOptimizationServiceTests: XCTestCase {
     private func createTestImage(name: String, size: CGSize) -> URL {
         let url = tempDirectoryURL.appendingPathComponent(name)
 
-        // Create minimal valid PNG with size metadata
-        let dummyPNGData = Data([
-            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A  // PNG signature
-        ])
+        // Create a valid PNG image using CoreGraphics
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
 
-        try! dummyPNGData.write(to: url)
+        guard let context = CGContext(
+            data: nil,
+            width: Int(size.width),
+            height: Int(size.height),
+            bitsPerComponent: 8,
+            bytesPerRow: Int(size.width) * 4,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo.rawValue
+        ) else {
+            fatalError("Failed to create CGContext")
+        }
+
+        // Fill with white
+        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        context.fill(CGRect(origin: .zero, size: size))
+
+        // Create PNG data
+        guard let cgImage = context.makeImage(),
+              let destination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypePNG, 1, nil) else {
+            fatalError("Failed to create image destination")
+        }
+
+        CGImageDestinationAddImage(destination, cgImage, nil)
+        CGImageDestinationFinalize(destination)
+
         return url
     }
 
     private func getImageDimensions(url: URL) throws -> CGSize {
-        // Placeholder: In real implementation, would read actual image dimensions
-        // For now, assume test passes if file exists
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Image file not found"])
+        guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [CFString: Any] else {
+            throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot read image properties"])
         }
-        return CGSize(width: 1024, height: 768)  // Dummy value for stub
-    }
-}
 
-// MARK: - Stub Service
+        let width = properties[kCGImagePropertyPixelWidth] as? CGFloat ?? 0
+        let height = properties[kCGImagePropertyPixelHeight] as? CGFloat ?? 0
 
-class ImageOptimizationService {
-    enum ImageOptimizationError: Error, LocalizedError {
-        case invalidSource
-        case resizeFailed
-        case writeFailed
-        case notImplemented
-
-        var errorDescription: String? {
-            switch self {
-            case .invalidSource: return "Source file not readable or corrupt"
-            case .resizeFailed: return "CoreImage filter failed"
-            case .writeFailed: return "Cannot write optimized file"
-            case .notImplemented: return "ImageOptimizationService not yet implemented"
-            }
-        }
-    }
-
-    func optimizeImage(sourceURL: URL, maxDimension: Int) throws -> URL {
-        throw ImageOptimizationError.notImplemented
+        return CGSize(width: width, height: height)
     }
 }

@@ -40,7 +40,6 @@ final class PDFExportServiceTests: XCTestCase {
         )
 
         // EXPECTED TO FAIL: PDFExportService not implemented yet
-        XCTExpectFailure("PDFExportService.exportAlbum not implemented yet - TDD phase")
 
         // When: Exporting album
         let service = PDFExportService()
@@ -66,7 +65,6 @@ final class PDFExportServiceTests: XCTestCase {
             outputURL: outputURL
         )
 
-        XCTExpectFailure("PDFExportService not implemented yet - TDD phase")
 
         // When/Then: Should throw invalidAlbum error
         let service = PDFExportService()
@@ -93,7 +91,6 @@ final class PDFExportServiceTests: XCTestCase {
             outputURL: invalidURL
         )
 
-        XCTExpectFailure("PDFExportService not implemented yet - TDD phase")
 
         // When/Then: Should throw write error
         let service = PDFExportService()
@@ -121,7 +118,6 @@ final class PDFExportServiceTests: XCTestCase {
             outputURL: outputURL
         )
 
-        XCTExpectFailure("PDFExportService not implemented yet - TDD phase")
 
         // When: Exporting
         let service = PDFExportService()
@@ -156,7 +152,6 @@ final class PDFExportServiceTests: XCTestCase {
             outputURL: outputURL
         )
 
-        XCTExpectFailure("PDFExportService.exportPage not implemented yet - TDD phase")
 
         // When: Exporting single page
         let service = PDFExportService()
@@ -180,7 +175,6 @@ final class PDFExportServiceTests: XCTestCase {
             outputURL: outputURL
         )
 
-        XCTExpectFailure("PDFExportService not implemented yet - TDD phase")
 
         // When/Then: Should throw invalidPage error
         let service = PDFExportService()
@@ -206,7 +200,6 @@ final class PDFExportServiceTests: XCTestCase {
             outputURL: outputURL
         )
 
-        XCTExpectFailure("PDFExportService not implemented yet - TDD phase")
 
         // When: Exporting
         let service = PDFExportService()
@@ -231,39 +224,5 @@ final class PDFExportServiceTests: XCTestCase {
         // Allow some tolerance for rounding
         XCTAssertEqual(bounds.width, expectedWidth, accuracy: 1.0)
         XCTAssertEqual(bounds.height, expectedHeight, accuracy: 1.0)
-    }
-}
-
-// MARK: - Stub Service (will fail all tests)
-
-/// Stub implementation that throws "not implemented" errors
-/// This ensures tests fail as required by TDD
-class PDFExportService {
-    enum PDFExportError: Error, LocalizedError {
-        case invalidAlbum
-        case invalidPage
-        case renderingFailed
-        case writeError
-        case insufficientPermissions
-        case notImplemented
-
-        var errorDescription: String? {
-            switch self {
-            case .invalidAlbum: return "Album has no pages"
-            case .invalidPage: return "Page has no layout"
-            case .renderingFailed: return "Page rendering failed"
-            case .writeError: return "Cannot write to output URL"
-            case .insufficientPermissions: return "Output directory not writable"
-            case .notImplemented: return "PDFExportService not yet implemented"
-            }
-        }
-    }
-
-    func exportAlbum(album: Album, options: PDFExportOptions) throws -> URL {
-        throw PDFExportError.notImplemented
-    }
-
-    func exportPage(page: Page, options: PDFExportOptions) throws -> URL {
-        throw PDFExportError.notImplemented
     }
 }

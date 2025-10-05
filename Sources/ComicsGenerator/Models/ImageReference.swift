@@ -2,12 +2,12 @@ import Foundation
 import CoreGraphics
 
 /// Reference to an image file with metadata about source and dimensions
-struct ImageReference: Codable, Identifiable {
-    let id: UUID
-    let url: URL
-    let dimensions: CGSize
-    let source: ImageSource
-    let type: ImageVersionType
+public struct ImageReference: Codable, Identifiable {
+    public let id: UUID
+    public let url: URL
+    public let dimensions: CGSize
+    public let source: ImageSource
+    public let type: ImageVersionType
     let createdAt: Date
 
     init(
@@ -37,13 +37,13 @@ struct ImageReference: Codable, Identifiable {
 }
 
 /// Source of an image (imported by user or AI-generated)
-enum ImageSource: String, Codable {
+public enum ImageSource: String, Codable {
     case imported    // User selected from file picker
     case generated   // AI-generated via chat
 }
 
 /// Type of image version (original full-resolution or optimized for API)
-enum ImageVersionType: String, Codable {
+public enum ImageVersionType: String, Codable {
     case original    // Full resolution
     case optimized   // Max 1024px dimension
 }

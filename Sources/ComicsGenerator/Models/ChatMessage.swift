@@ -1,13 +1,13 @@
 import Foundation
 
 /// Single message in AI chat conversation, from either user or assistant
-struct ChatMessage: Codable, Identifiable {
-    let id: UUID
-    let role: MessageRole
-    let text: String
-    let attachedImages: [URL]
-    let generatedImages: [URL]
-    let timestamp: Date
+public struct ChatMessage: Codable, Identifiable {
+    public let id: UUID
+    public let role: MessageRole
+    public let text: String
+    public let attachedImages: [URL]
+    public let generatedImages: [URL]
+    public let timestamp: Date
 
     init(
         id: UUID = UUID(),
@@ -47,7 +47,7 @@ struct ChatMessage: Codable, Identifiable {
 }
 
 /// Role of message sender (user or AI assistant)
-enum MessageRole: String, Codable {
+public enum MessageRole: String, Codable {
     case user
     case assistant
 }

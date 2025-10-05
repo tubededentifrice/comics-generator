@@ -22,3 +22,4 @@ Swift 5.9+: Follow standard conventions
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
+- Always compile and run tests after implementing anything, and iterate until everything is fine.

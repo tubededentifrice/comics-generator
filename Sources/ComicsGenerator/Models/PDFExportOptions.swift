@@ -1,13 +1,13 @@
 import Foundation
 
 /// Configuration for PDF export operation
-struct PDFExportOptions: Codable {
-    let resolution: Int
+public struct PDFExportOptions: Codable {
+    public let resolution: Int
     let includeMetadata: Bool
-    let seriesName: String
-    let albumName: String
-    let pageRange: PageRange
-    let outputURL: URL
+    public let seriesName: String
+    public let albumName: String
+    public let pageRange: PageRange
+    public let outputURL: URL
 
     init(
         resolution: Int = 300,
@@ -40,7 +40,7 @@ struct PDFExportOptions: Codable {
 }
 
 /// Range of pages to export (all pages or single page)
-enum PageRange: Codable, Equatable {
+public enum PageRange: Codable, Equatable {
     case all
     case single(pageIndex: Int)
 

@@ -1,8 +1,10 @@
 import Foundation
 import UniformTypeIdentifiers
+import ImageIO
+import CoreGraphics
 
 /// Service for importing external images into assets with dual-resolution storage
-class AssetImportService {
+public class AssetImportService {
     enum AssetImportError: Error, LocalizedError {
         case unsupportedFormat(String)
         case imageLoadFailed(URL)
@@ -29,7 +31,7 @@ class AssetImportService {
     private let optimizationService: ImageOptimizationService
     private let promptExportService: PromptExportService
 
-    init(
+    public init(
         optimizationService: ImageOptimizationService = ImageOptimizationService(),
         promptExportService: PromptExportService = PromptExportService()
     ) {
@@ -127,7 +129,7 @@ class AssetImportService {
     /// - Throws: AssetImportError if removal fails
     func removeImage(imageReference: ImageReference, asset: Asset) throws {
         // Find the image in asset's collection
-        guard let originalIndex = asset.originalImages.firstIndex(where: { $0.id == imageReference.id }) else {
+        guard asset.originalImages.firstIndex(where: { $0.id == imageReference.id }) != nil else {
             throw AssetImportError.imageLoadFailed(imageReference.url)
         }
 
@@ -156,11 +158,11 @@ class AssetImportService {
         // For now, return placeholder dimensions
         // This is a limitation of the stub implementation
 
-        guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+        guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil as CFDictionary?) else {
             throw AssetImportError.imageLoadFailed(url)
         }
 
-        guard let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [CFString: Any] else {
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil as CFDictionary?) as? [CFString: Any] else {
             throw AssetImportError.imageLoadFailed(url)
         }
 

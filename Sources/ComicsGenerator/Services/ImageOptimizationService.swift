@@ -4,7 +4,7 @@ import CoreGraphics
 import UniformTypeIdentifiers
 
 /// Service for optimizing images by resizing to maximum dimension
-class ImageOptimizationService {
+public class ImageOptimizationService {
     enum ImageOptimizationError: Error, LocalizedError {
         case invalidSource
         case resizeFailed
@@ -24,7 +24,7 @@ class ImageOptimizationService {
 
     private let context: CIContext
 
-    init() {
+    public init() {
         // Use default CIContext for GPU-accelerated processing
         self.context = CIContext()
     }

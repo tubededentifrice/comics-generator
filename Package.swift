@@ -13,6 +13,10 @@ let package = Package(
         .library(
             name: "ComicsGenerator",
             targets: ["ComicsGenerator"]
+        ),
+        .executable(
+            name: "ComicsGeneratorApp",
+            targets: ["ComicsGeneratorApp"]
         )
     ],
     dependencies: [
@@ -22,11 +26,18 @@ let package = Package(
     targets: [
         .target(
             name: "ComicsGenerator",
-            dependencies: ["Yams"]
+            dependencies: ["Yams"],
+            path: "Sources/ComicsGenerator"
+        ),
+        .executableTarget(
+            name: "ComicsGeneratorApp",
+            dependencies: ["ComicsGenerator"],
+            path: "Sources/ComicsGeneratorApp"
         ),
         .testTarget(
             name: "ComicsGeneratorTests",
-            dependencies: ["ComicsGenerator"]
+            dependencies: ["ComicsGenerator"],
+            path: "Tests/ComicsGeneratorTests"
         )
     ]
 )

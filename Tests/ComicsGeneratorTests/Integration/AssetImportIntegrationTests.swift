@@ -1,4 +1,6 @@
 import XCTest
+import ImageIO
+import UniformTypeIdentifiers
 @testable import ComicsGenerator
 
 /// Integration tests for asset import workflows (Quickstart Scenario 3)
@@ -16,7 +18,7 @@ final class AssetImportIntegrationTests: XCTestCase {
             withIntermediateDirectories: true
         )
         imageOptimizationService = ImageOptimizationService()
-        assetImportService = AssetImportService(optimizationService: imageOptimizationService)
+        assetImportService = AssetImportService()
     }
 
     override func tearDown() {
@@ -113,9 +115,36 @@ final class AssetImportIntegrationTests: XCTestCase {
 
     private func createTestImage(name: String, size: CGSize) -> URL {
         let url = tempDirectoryURL.appendingPathComponent(name)
-        // Create minimal PNG data
-        let dummyPNGData = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
-        try! dummyPNGData.write(to: url)
+
+        // Create a valid PNG image using CoreGraphics
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+
+        guard let context = CGContext(
+            data: nil,
+            width: Int(size.width),
+            height: Int(size.height),
+            bitsPerComponent: 8,
+            bytesPerRow: Int(size.width) * 4,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo.rawValue
+        ) else {
+            fatalError("Failed to create CGContext")
+        }
+
+        // Fill with white
+        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        context.fill(CGRect(origin: .zero, size: size))
+
+        // Create PNG data
+        guard let cgImage = context.makeImage(),
+              let destination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypePNG, 1, nil) else {
+            fatalError("Failed to create image destination")
+        }
+
+        CGImageDestinationAddImage(destination, cgImage, nil)
+        CGImageDestinationFinalize(destination)
+
         return url
     }
 }

@@ -3,7 +3,7 @@ import Combine
 
 /// ViewModel for PDF export operations
 @MainActor
-class PDFExportViewModel: ObservableObject {
+public class PDFExportViewModel: ObservableObject {
     @Published var isExporting: Bool = false
     @Published var progress: Double = 0.0
     @Published var errorMessage: String?
@@ -11,7 +11,7 @@ class PDFExportViewModel: ObservableObject {
 
     private let pdfExportService: PDFExportService
 
-    init(pdfExportService: PDFExportService = PDFExportService()) {
+    public init(pdfExportService: PDFExportService = PDFExportService()) {
         self.pdfExportService = pdfExportService
     }
 

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Service for exporting asset prompt text to standalone files
-class PromptExportService {
+public class PromptExportService {
     enum PromptExportError: Error, LocalizedError {
         case writeError(URL, Error)
         case invalidAssetFolder(URL)
@@ -15,6 +15,8 @@ class PromptExportService {
             }
         }
     }
+
+    public init() {}
 
     /// Exports asset prompt text to {asset-folder}/prompt.txt
     /// - Parameter asset: Asset whose prompt text to export

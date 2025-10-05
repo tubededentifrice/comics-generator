@@ -1,7 +1,8 @@
 import Foundation
+import Yams
 
 /// Service for managing AI chat conversations within asset editor
-class AIChatService {
+public class AIChatService {
     enum AIChatError: Error, LocalizedError {
         case noAPIKey
         case invalidAPIKey
@@ -37,7 +38,7 @@ class AIChatService {
     private let apiKey: String?
     private let timeoutInterval: TimeInterval = 60.0
 
-    init(apiKey: String?) {
+    public init(apiKey: String?) {
         self.apiKey = apiKey
     }
 
@@ -64,26 +65,73 @@ class AIChatService {
             throw AIChatError.generationFailed("Cannot attach more than 10 images")
         }
 
-        // In full implementation, would:
-        // 1. Prepare API request with optimized images
-        // 2. Make URLSession request with 60s timeout
-        // 3. Handle timeout with "Keep Waiting"/"Cancel" dialog
-        // 4. Parse response and extract generated image URLs
-        // 5. Return ChatMessage with generatedImages array
+        // Configure URLSession with 60s timeout
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 60.0
+        config.timeoutIntervalForResource = 60.0
+        let session = URLSession(configuration: config)
 
-        // For now, return a stub assistant message
-        // Full implementation requires:
-        // - URLSession configuration with timeout
-        // - Provider-specific API formatting (Midjourney/DALL-E/Gemini)
-        // - Image upload handling for multipart requests
-        // - Response parsing
+        // Prepare API request based on provider
+        let request: URLRequest
+        do {
+            request = try buildAPIRequest(
+                text: text,
+                images: images,
+                provider: provider,
+                apiKey: apiKey
+            )
+        } catch {
+            throw AIChatError.generationFailed("Failed to build API request: \(error.localizedDescription)")
+        }
 
-        let generatedImageURL = URL(fileURLWithPath: "/tmp/generated-\(UUID().uuidString).png")
+        // Make synchronous network request
+        var responseData: Data?
+        var responseError: Error?
+        let semaphore = DispatchSemaphore(value: 0)
+
+        let task = session.dataTask(with: request) { data, response, error in
+            responseData = data
+            responseError = error
+            semaphore.signal()
+        }
+        task.resume()
+
+        // Wait for response or timeout
+        let result = semaphore.wait(timeout: .now() + 60.0)
+        if result == .timedOut {
+            task.cancel()
+            throw AIChatError.timeout
+        }
+
+        // Check for network errors
+        if let error = responseError {
+            if (error as NSError).code == NSURLErrorTimedOut {
+                throw AIChatError.timeout
+            }
+            throw AIChatError.networkError(error)
+        }
+
+        // Parse response
+        guard let data = responseData else {
+            throw AIChatError.generationFailed("No data received from API")
+        }
+
+        let generatedImages: [URL]
+        let responseText: String
+
+        do {
+            (responseText, generatedImages) = try parseAPIResponse(
+                data: data,
+                provider: provider
+            )
+        } catch {
+            throw AIChatError.generationFailed("Failed to parse API response: \(error.localizedDescription)")
+        }
 
         return ChatMessage(
             role: .assistant,
-            text: "",
-            generatedImages: [generatedImageURL]
+            text: responseText,
+            generatedImages: generatedImages
         )
     }
 
@@ -108,15 +156,17 @@ class AIChatService {
         // 4. Verify messages sorted by timestamp
         // 5. Target: <50ms for 100 messages
 
-        // For now, return empty (YAML parsing requires Yams dependency)
-        // TODO: Add Yams via SPM and implement full YAML parsing
+        // Read and parse YAML file
+        let yamlString = try String(contentsOf: historyPath, encoding: .utf8)
 
-        let yamlData = try Data(contentsOf: historyPath)
-        // let decoder = YAMLDecoder()  // Requires Yams
-        // let history = try decoder.decode(ChatHistory.self, from: yamlData)
-        // return history.messages
+        // Parse YAML using Yams
+        let decoder = YAMLDecoder()
+        let history = try decoder.decode(ChatHistory.self, from: yamlString)
 
-        return []  // Stub until Yams integrated
+        // Verify messages are sorted by timestamp
+        let sortedMessages = history.messages.sorted { $0.timestamp < $1.timestamp }
+
+        return sortedMessages
     }
 
     /// Saves chat history to disk for an asset
@@ -148,17 +198,21 @@ class AIChatService {
 
         let history = ChatHistory(messages: messages)
 
-        // TODO: Implement YAML encoding with Yams
-        // let encoder = YAMLEncoder()
-        // let yamlData = try encoder.encode(history)
-        // try yamlData.write(to: historyURL, options: .atomic)
+        // Encode to YAML using Yams
+        let encoder = YAMLEncoder()
+        let yamlString = try encoder.encode(history)
 
-        // For now, write placeholder to demonstrate file creation
-        let placeholderYAML = """
-        messages: []
-        version: "1.0"
-        """
-        try placeholderYAML.write(to: historyURL, atomically: true, encoding: .utf8)
+        // Write atomically (temp file + rename for crash safety)
+        let tempURL = historyURL.deletingLastPathComponent()
+            .appendingPathComponent(".\(UUID().uuidString).tmp")
+
+        try yamlString.write(to: tempURL, atomically: true, encoding: .utf8)
+
+        // Atomic replace
+        if FileManager.default.fileExists(atPath: historyURL.path) {
+            try FileManager.default.removeItem(at: historyURL)
+        }
+        try FileManager.default.moveItem(at: tempURL, to: historyURL)
     }
 
     /// Deletes chat history file for an asset
@@ -203,5 +257,165 @@ class AIChatService {
         )
 
         return imageRef
+    }
+
+    // MARK: - Private API helpers
+
+    private func buildAPIRequest(
+        text: String,
+        images: [URL],
+        provider: AIProvider,
+        apiKey: String
+    ) throws -> URLRequest {
+        switch provider {
+        case .midjourney:
+            return try buildMidjourneyRequest(text: text, images: images, apiKey: apiKey)
+        case .dalle3:
+            return try buildDALLE3Request(text: text, images: images, apiKey: apiKey)
+        case .gemini:
+            return try buildGeminiRequest(text: text, images: images, apiKey: apiKey)
+        }
+    }
+
+    private func buildMidjourneyRequest(text: String, images: [URL], apiKey: String) throws -> URLRequest {
+        // Midjourney API endpoint (via Discord or third-party wrapper)
+        guard let url = URL(string: "https://api.midjourney.com/v1/imagine") else {
+            throw AIChatError.generationFailed("Invalid API endpoint")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "prompt": text,
+            "image_urls": images.map { $0.absoluteString }
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    private func buildDALLE3Request(text: String, images: [URL], apiKey: String) throws -> URLRequest {
+        // OpenAI DALL-E 3 API
+        guard let url = URL(string: "https://api.openai.com/v1/images/generations") else {
+            throw AIChatError.generationFailed("Invalid API endpoint")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "model": "dall-e-3",
+            "prompt": text,
+            "n": 1,
+            "size": "1024x1024"
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    private func buildGeminiRequest(text: String, images: [URL], apiKey: String) throws -> URLRequest {
+        // Google Gemini API
+        guard let url = URL(string: "https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=\(apiKey)") else {
+            throw AIChatError.generationFailed("Invalid API endpoint")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // Encode images as base64 if present
+        var parts: [[String: Any]] = [["text": text]]
+
+        for imageURL in images {
+            if let imageData = try? Data(contentsOf: imageURL) {
+                let base64 = imageData.base64EncodedString()
+                parts.append([
+                    "inline_data": [
+                        "mime_type": "image/png",
+                        "data": base64
+                    ]
+                ])
+            }
+        }
+
+        let body: [String: Any] = [
+            "contents": [
+                ["parts": parts]
+            ]
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    private func parseAPIResponse(
+        data: Data,
+        provider: AIProvider
+    ) throws -> (text: String, images: [URL]) {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AIChatError.generationFailed("Invalid JSON response")
+        }
+
+        switch provider {
+        case .midjourney:
+            return try parseMidjourneyResponse(json: json)
+        case .dalle3:
+            return try parseDALLE3Response(json: json)
+        case .gemini:
+            return try parseGeminiResponse(json: json)
+        }
+    }
+
+    private func parseMidjourneyResponse(json: [String: Any]) throws -> (text: String, images: [URL]) {
+        guard let imageUrls = json["image_urls"] as? [String] else {
+            throw AIChatError.generationFailed("No images in response")
+        }
+
+        let urls = imageUrls.compactMap { URL(string: $0) }
+        let text = json["description"] as? String ?? ""
+
+        return (text, urls)
+    }
+
+    private func parseDALLE3Response(json: [String: Any]) throws -> (text: String, images: [URL]) {
+        guard let data = json["data"] as? [[String: Any]],
+              let firstImage = data.first,
+              let urlString = firstImage["url"] as? String,
+              let url = URL(string: urlString) else {
+            throw AIChatError.generationFailed("No image URL in response")
+        }
+
+        let revisedPrompt = firstImage["revised_prompt"] as? String ?? ""
+        return (revisedPrompt, [url])
+    }
+
+    private func parseGeminiResponse(json: [String: Any]) throws -> (text: String, images: [URL]) {
+        guard let candidates = json["candidates"] as? [[String: Any]],
+              let firstCandidate = candidates.first,
+              let content = firstCandidate["content"] as? [String: Any],
+              let parts = content["parts"] as? [[String: Any]] else {
+            throw AIChatError.generationFailed("Invalid response structure")
+        }
+
+        var text = ""
+        var imageUrls: [URL] = []
+
+        for part in parts {
+            if let partText = part["text"] as? String {
+                text += partText
+            }
+            if let imageUrl = part["image_url"] as? String,
+               let url = URL(string: imageUrl) {
+                imageUrls.append(url)
+            }
+        }
+
+        return (text, imageUrls)
     }
 }

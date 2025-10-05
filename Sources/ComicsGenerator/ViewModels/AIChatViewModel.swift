@@ -3,7 +3,7 @@ import Combine
 
 /// ViewModel for AI chat interface
 @MainActor
-class AIChatViewModel: ObservableObject {
+public class AIChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var inputText: String = ""
     @Published var isGenerating: Bool = false
@@ -13,17 +13,18 @@ class AIChatViewModel: ObservableObject {
     private let aiChatService: AIChatService
     private var currentAsset: Asset?
 
-    init(aiChatService: AIChatService) {
+    public init(aiChatService: AIChatService) {
         self.aiChatService = aiChatService
     }
 
     /// Loads chat history for an asset
     func loadHistory(for asset: Asset) async {
         self.currentAsset = asset
+        let service = self.aiChatService
 
         do {
             let loadedMessages = try await Task.detached {
-                try self.aiChatService.loadHistory(asset: asset)
+                try service.loadHistory(asset: asset)
             }.value
 
             await MainActor.run {
@@ -57,8 +58,9 @@ class AIChatViewModel: ObservableObject {
 
         do {
             // Send to AI service
+            let service = self.aiChatService
             let assistantMessage = try await Task.detached {
-                try self.aiChatService.sendMessage(
+                try service.sendMessage(
                     text: userMessage.text,
                     images: userMessage.attachedImages,
                     provider: provider
@@ -88,18 +90,21 @@ class AIChatViewModel: ObservableObject {
 
     /// Saves chat history for the current asset
     func saveHistory(for asset: Asset) async throws {
+        let messagesToSave = await MainActor.run { self.messages }
+        let service = self.aiChatService
         try await Task.detached {
-            try self.aiChatService.saveHistory(messages: self.messages, asset: asset)
+            try service.saveHistory(messages: messagesToSave, asset: asset)
         }.value
     }
 
     /// Clears chat history
     func clearHistory() async {
         guard let asset = currentAsset else { return }
+        let service = self.aiChatService
 
         do {
             try await Task.detached {
-                try self.aiChatService.clearHistory(asset: asset)
+                try service.clearHistory(asset: asset)
             }.value
 
             await MainActor.run {
@@ -114,9 +119,10 @@ class AIChatViewModel: ObservableObject {
 
     /// Imports a generated image into the asset
     func importImage(_ imageURL: URL, into asset: Asset) async {
+        let service = self.aiChatService
         do {
             let _ = try await Task.detached {
-                try self.aiChatService.importGeneratedImage(imageURL: imageURL, asset: asset)
+                try service.importGeneratedImage(imageURL: imageURL, asset: asset)
             }.value
 
             await MainActor.run {

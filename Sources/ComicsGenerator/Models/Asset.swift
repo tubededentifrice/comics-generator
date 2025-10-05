@@ -1,13 +1,13 @@
 import Foundation
 
 /// Reusable character, object, or setting with reference images and AI chat history
-struct Asset: Codable, Identifiable {
-    let id: UUID
-    let name: String
-    let scope: AssetScope
-    let promptText: String
-    let originalImages: [ImageReference]
-    let optimizedImages: [ImageReference]
+public struct Asset: Codable, Identifiable {
+    public let id: UUID
+    public let name: String
+    public let scope: AssetScope
+    public let promptText: String
+    public let originalImages: [ImageReference]
+    public let optimizedImages: [ImageReference]
     let chatHistoryPath: URL?
     let createdAt: Date
     let updatedAt: Date
@@ -77,7 +77,7 @@ struct Asset: Codable, Identifiable {
 }
 
 /// Hierarchy level for asset (root/series/album)
-enum AssetScope: String, Codable {
+public enum AssetScope: String, Codable {
     case root
     case series
     case album
