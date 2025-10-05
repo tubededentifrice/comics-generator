@@ -100,11 +100,12 @@
       "behavior": {
         "emptyHistory": "Returns [] if no history file exists (not error)",
         "ordering": "Messages sorted by timestamp ascending",
-        "caching": "No caching (always reads from disk)"
+        "caching": "No caching (always reads from disk)",
+        "format": "YAML format (history.yaml)"
       },
       "performance": {
         "target": "<50ms for 100 messages",
-        "constraint": "JSON decoding with ISO8601 dates"
+        "constraint": "YAML decoding with ISO8601 dates (via Yams library)"
       }
     },
     {
@@ -141,11 +142,11 @@
       },
       "sideEffects": [
         "Creates .chat/ directory if missing",
-        "Writes .chat/history.json with pretty-printed JSON",
+        "Writes .chat/history.yaml with human-readable YAML format",
         "Updates asset.chatHistoryPath if previously nil"
       ],
       "behavior": {
-        "format": "Pretty-printed JSON for Git-friendliness",
+        "format": "YAML format for superior Git-friendliness and readability",
         "atomicity": "Atomic write (write to temp, then move)"
       },
       "performance": {
@@ -173,7 +174,7 @@
         }
       ],
       "sideEffects": [
-        "Deletes .chat/history.json file",
+        "Deletes .chat/history.yaml file",
         "Sets asset.chatHistoryPath to nil",
         "Preserves .chat/ directory (may contain temp files)"
       ],
@@ -226,10 +227,10 @@
     "CryptoKit (for secure API key storage)"
   ],
   "constitutional_compliance": {
-    "principle_I": "Chat history stored as JSON (Git-compatible)",
+    "principle_I": "Chat history stored as YAML (preferred format per constitution v1.0.1)",
     "principle_IV": "Contract tests required before implementation",
     "principle_V": "Performance targets specified",
-    "principle_VI": "No third-party HTTP libraries (use URLSession)"
+    "principle_VI": "URLSession for HTTP, Yams (SPM) for YAML parsing"
   },
   "external_dependencies": {
     "midjourney_api": {

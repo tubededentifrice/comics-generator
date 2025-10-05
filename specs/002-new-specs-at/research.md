@@ -96,27 +96,32 @@ func optimizeImage(at sourceURL: URL, maxDimension: Int) throws -> URL {
 
 **Question**: How should we store chat history to ensure human-readability, Git-compatibility, and efficient loading?
 
-**Decision**: JSON file per asset in `.chat/` subfolder
+**Decision**: YAML file per asset in `.chat/` subfolder
 
 **Rationale**:
-- Human-readable format (satisfies Constitution Principle I)
-- Git-friendly (text-based diffs, meaningful history)
-- Simple implementation (Codable protocol)
-- One file per asset prevents bloating main asset JSON
+- Superior human-readability vs JSON (satisfies Constitution Principle I preference for YAML)
+- Excellent Git-friendliness (cleaner diffs, no closing brace noise)
+- Comments supported for future annotations
+- Multiline strings more readable for long prompts
+- Standard library support via Yams (Swift Package Manager)
+- One file per asset prevents bloating main asset YAML
 - Easy to backup/restore individually
 - No database overhead
 
 **Alternatives Considered**:
+- **JSON**: Native Codable support but less readable, noisier Git diffs with brackets
 - **SQLite**: Overkill for simple append-only data, binary format not Git-friendly
-- **Embedded in asset JSON**: Bloats asset file, makes diffs noisy, harder to review
-- **plist format**: Less standard, harder to read/edit manually
+- **Embedded in asset YAML**: Bloats asset file, makes diffs noisy, harder to review
+- **plist format**: Apple-specific, harder to read/edit manually
+
+**Constitutional Alignment**: Constitution v1.0.1 explicitly prefers YAML over JSON for structured data files
 
 **File Structure**:
 ```
 Assets/
 └── castle-asset-id/
-    ├── asset.json           # Asset metadata
-    ├── prompt.txt           # Asset prompt text
+    ├── asset.yaml           # Asset metadata
+    ├── prompt.txt           # Asset prompt text (for quick viewing)
     ├── originals/           # Full-resolution images
     │   ├── image1.png
     │   └── image2.jpg
@@ -124,32 +129,30 @@ Assets/
     │   ├── image1-opt.png
     │   └── image2-opt.jpg
     └── .chat/
-        └── history.json     # Chat messages
+        └── history.yaml     # Chat messages
 ```
 
-**JSON Schema**:
-```json
-{
-  "messages": [
-    {
-      "id": "uuid",
-      "role": "user",
-      "text": "Create a medieval castle",
-      "attachedImages": ["url1", "url2"],
-      "generatedImages": [],
-      "timestamp": "2025-10-05T10:30:00Z"
-    },
-    {
-      "id": "uuid",
-      "role": "assistant",
-      "text": "",
-      "attachedImages": [],
-      "generatedImages": ["url3"],
-      "timestamp": "2025-10-05T10:30:15Z"
-    }
-  ],
-  "version": "1.0"
-}
+**YAML Schema**:
+```yaml
+messages:
+  - id: uuid-1
+    role: user
+    text: Create a medieval castle
+    attachedImages:
+      - url1
+      - url2
+    generatedImages: []
+    timestamp: 2025-10-05T10:30:00Z
+
+  - id: uuid-2
+    role: assistant
+    text: ""
+    attachedImages: []
+    generatedImages:
+      - url3
+    timestamp: 2025-10-05T10:30:15Z
+
+version: "1.0"
 ```
 
 ---
@@ -257,13 +260,21 @@ struct AIChatView: View {
 
 ---
 
+## Implementation Notes
+
+**YAML from Day 1**:
+- No migration from JSON needed - implementing all features with YAML from the start
+- Constitution v1.0.1 establishes YAML as preferred format
+- Both Feature 001 and Feature 002 will use YAML persistence
+- Yams library (SPM) provides robust YAML Codable support
+
 ## Open Questions
 
 *All critical questions resolved via /clarify session. No blockers remain.*
 
 Minor implementation details to resolve during coding:
 1. Exact page number placement (footer center vs. corner) - defer to design phase
-2. Duplicate image import behavior (overwrite vs. rename) - handle in error case
+2. Duplicate image import behavior (overwrite vs. rename) - handled in spec (FR-095a: allow duplicates)
 
 ---
 

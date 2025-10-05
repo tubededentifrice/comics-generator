@@ -38,14 +38,14 @@ Created → ImagesAdded → ChatInitiated → ChatActive → ChatCleared → Ima
 **Validation Rules**:
 - `originalImages.count == optimizedImages.count` (1:1 correspondence)
 - Each `optimizedImages[i]` must reference same base image as `originalImages[i]`
-- `chatHistoryPath` must point to valid JSON file if non-nil
+- `chatHistoryPath` must point to valid YAML file if non-nil
 - `name` must be unique within scope
 
 **File Structure**:
 ```
 Assets/{scope}/{asset-id}/
-├── asset.json            # This entity serialized
-├── prompt.txt            # promptText content
+├── asset.yaml            # This entity serialized
+├── prompt.txt            # promptText exported for quick viewing (read-only export)
 ├── originals/
 │   ├── {uuid}.png
 │   └── {uuid}.jpg
@@ -53,8 +53,10 @@ Assets/{scope}/{asset-id}/
 │   ├── {uuid}.png        # Max 1024px dimension
 │   └── {uuid}.jpg
 └── .chat/
-    └── history.json      # ChatHistory entity
+    └── history.yaml      # ChatHistory entity
 ```
+
+**Note**: prompt.txt is automatically exported from asset.yaml's `promptText` field for easy viewing/sharing. The source of truth is always asset.yaml. If prompt.txt is manually edited, changes are ignored on next save.
 
 ---
 
@@ -120,7 +122,7 @@ Deleted    Deleted      Deleted
 - `version` must match parser version
 
 **Persistence**:
-- Stored as JSON at `{asset-folder}/.chat/history.json`
+- Stored as YAML at `{asset-folder}/.chat/history.yaml`
 - Auto-saved after each new message
 - Loaded lazily when chat interface opened
 
@@ -237,49 +239,40 @@ Root
 
 ---
 
-## Migration Strategy
+## Implementation Notes
 
-**From Feature 001 (base app) to Feature 002**:
+**Feature 002 builds on Feature 001 foundation**:
 
-**Asset Model Changes**:
+**Asset Model Enhancements**:
 ```swift
-// OLD (Feature 001)
+// Feature 001 baseline (to be implemented)
 struct Asset {
     let id: UUID
     let name: String
     let scope: AssetScope
     let promptText: String
-    let images: [URL]  // Single image list
+    let images: [URL]  // Simple image list
 }
 
-// NEW (Feature 002)
+// Feature 002 enhancements
 struct Asset {
     let id: UUID
     let name: String
     let scope: AssetScope
     let promptText: String
-    let originalImages: [ImageReference]   // Split into two
-    let optimizedImages: [ImageReference]  // types
-    let chatHistoryPath: URL?              // NEW
-    let createdAt: Date
-    let updatedAt: Date
+    let originalImages: [ImageReference]   // Enhanced: dual-resolution storage
+    let optimizedImages: [ImageReference]  // Enhanced: API-optimized versions
+    let chatHistoryPath: URL?              // NEW: chat persistence
+    let createdAt: Date                    // NEW: audit timestamps
+    let updatedAt: Date                    // NEW: audit timestamps
 }
 ```
 
-**Migration Steps**:
-1. Read existing `Asset` JSON files
-2. For each `images[i]` URL:
-   - Create `ImageReference` with `source: .imported`, `type: .original`
-   - Generate optimized version → `ImageReference` with `type: .optimized`
-   - Move original to `originals/` subfolder
-   - Save optimized to `optimized/` subfolder
-3. Set `chatHistoryPath = nil` (no existing chat history)
-4. Set `createdAt/updatedAt` to file modification date
-5. Write new `asset.json` schema
-
-**Rollback Strategy**:
-- Keep backups of original asset.json files
-- Migration script can reverse by merging `originalImages` back to `images` list
+**Implementation Approach**:
+- All features will use YAML format from the start (no migration needed)
+- Asset files stored as `asset.yaml` from initial implementation
+- Chat history stored as `.chat/history.yaml` from first chat session
+- prompt.txt automatically exported on each save for user convenience
 
 ---
 

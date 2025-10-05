@@ -27,7 +27,7 @@ Follow-up TODOs:
 ## Core Principles
 
 ### I. Open Standards & Portability
-All application data MUST be stored as standard, human-readable files in a single designated folder. This folder MUST be fully version-controllable via Git and manually reviewable without proprietary tools. File formats SHALL use open standards (JSON, Markdown, PNG, SVG) whenever feasible. No proprietary data formats are permitted unless absolutely necessary for platform integration, in which case the decision MUST be documented with export alternatives.
+All application data MUST be stored as standard, human-readable files in a single designated folder. This folder MUST be fully version-controllable via Git and manually reviewable without proprietary tools. File formats SHALL use open standards (YAML preferred for structured data, JSON acceptable, Markdown, PNG, SVG) whenever feasible. YAML is preferred over JSON for configuration and data files due to superior human readability and Git diff clarity. No proprietary data formats are permitted unless absolutely necessary for platform integration, in which case the decision MUST be documented with export alternatives.
 
 **Rationale**: Ensures user data ownership, enables version control workflows, facilitates debugging, and prevents vendor lock-in.
 
@@ -131,4 +131,22 @@ All UI patterns MUST follow Apple Human Interface Guidelines. Interactions (gest
 ### Constitutional Authority
 This constitution supersedes all other development practices. When conflicts arise between this document and external guidelines (e.g., team conventions, library docs), constitution takes precedence. Changes to this document follow the Amendment Process above.
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-05 | **Last Amended**: 2025-10-05
+**Version**: 1.0.1 | **Ratified**: 2025-10-05 | **Last Amended**: 2025-10-05
+
+---
+
+## Amendment History
+
+### v1.0.1 (2025-10-05)
+**Type**: PATCH (clarification)
+**Changes**:
+- Amended Principle I to explicitly prefer YAML over JSON for structured data files
+- Rationale: YAML provides superior Git diff clarity and human readability for configuration and data persistence
+- Added "YAML preferred for structured data, JSON acceptable" language
+- Maintained backward compatibility (JSON still acceptable)
+
+**Impact**: Low - existing JSON-based features can remain; new features should use YAML
+
+### v1.0.0 (2025-10-05)
+**Type**: Initial ratification
+**Changes**: Established all 7 core principles

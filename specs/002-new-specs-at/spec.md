@@ -50,11 +50,11 @@ A comic book creator has completed several pages of their album and wants to sha
 
 - When exporting an album with incomplete pages, all pages are included; missing drawings render as blank polygons
 - PDF export uses 300 DPI (print resolution) for publication-quality output
-- What happens when a user attempts to upload an unsupported image format to the AI chat? [NEEDS CLARIFICATION]
+- When a user attempts to upload an unsupported image format to the AI chat, system displays error: "Unsupported format: [format]. Supported formats: PNG, JPG, JPEG, HEIC, SVG" and prevents upload; user can select different file
 - Imported images stored in two versions: original resolution (archival) and model-optimized 1024px max dimension (API transmission)
 - When AI chat session fails mid-conversation (network error, API timeout), a clear error is shown indicating the reason for failure when available; timeout behavior follows FR-068 (60s warning with "Keep Waiting"/"Cancel" options)
 - Chat history is preserved indefinitely with no automatic retention limits; deleted only when asset is deleted or user manually clears chat
-- What happens when a user imports the same generated image multiple times? [NEEDS CLARIFICATION]
+- When a user imports the same generated image multiple times, system allows duplicates with separate UUIDs; each import creates independent ImageReference; user can manually delete unwanted duplicates via asset editor
 - Users can delete individual reference images from an asset after importing (per FR-085)
 - When an asset is deleted, its associated chat history is also deleted (per FR-100a)
 - PDF exports include full metadata: series name, album name, page numbers (visible on pages), and creation date in document properties
@@ -72,9 +72,11 @@ A comic book creator has completed several pages of their album and wants to sha
 - **FR-072**: Page PDF export MUST render the single page with its layout, polygons, and active drawing versions
 - **FR-073**: PDF export MUST render drawings at their original resolution within polygon boundaries
 - **FR-074**: PDF export MUST preserve page dimensions as defined in the layout
-- **FR-075**: PDF export MUST include document metadata: series name, album name, page numbers, and creation date
-- **FR-075a**: Page numbers MUST be visible on each page in the exported PDF
-- **FR-075b**: PDF document properties MUST include series and album names in the metadata fields
+- **FR-075**: PDF export MUST include complete document metadata:
+  - Series name and album name in PDF document properties (author/title fields)
+  - Page numbers visible on each page (format: "Page N of Total")
+  - Creation date in document properties
+  - All metadata fields accessible via standard PDF readers
 - **FR-076**: PDF export MUST render at 300 DPI (print resolution) for publication-quality output
 - **FR-077**: Album PDF export MUST include all pages regardless of completion status; incomplete pages with missing drawings render with blank polygons
 - **FR-078**: Users MUST be able to specify a save location and filename for exported PDFs
@@ -95,12 +97,15 @@ A comic book creator has completed several pages of their album and wants to sha
 - **FR-087**: Generate with AI option MUST open a chat interface with the currently configured AI model provider
 - **FR-088**: Chat interface MUST support text prompt input
 - **FR-089**: Chat interface MUST support image upload via drag-and-drop or file picker
+- **FR-089a**: System MUST validate uploaded image formats against supported list (PNG, JPG, JPEG, HEIC, SVG)
+- **FR-089b**: System MUST display error "Unsupported format: [format]. Supported formats: PNG, JPG, JPEG, HEIC, SVG" and reject unsupported uploads
 - **FR-090**: Chat interface MUST display conversation history (user prompts and AI responses) in chronological order
 - **FR-091**: When user submits a prompt with optional images, system MUST send the request to the AI model API
 - **FR-092**: AI-generated images MUST be displayed in the chat as responses
 - **FR-093**: Each generated image in the chat MUST be clickable
 - **FR-094**: Clicking a generated image MUST display an "Import to Asset" action
 - **FR-095**: Importing a generated image MUST add it to the asset's reference image collection
+- **FR-095a**: System MUST allow importing the same generated image multiple times, creating separate ImageReferences with unique UUIDs
 - **FR-096**: Chat interface MUST include a "Clear Chat" button
 - **FR-097**: Clear Chat MUST erase all conversation history and generated images from the current session
 - **FR-098**: Chat history MUST persist when navigating away from the asset and returning
@@ -138,7 +143,7 @@ A comic book creator has completed several pages of their album and wants to sha
 - [x] Scope is clearly bounded
 - [x] Dependencies and assumptions identified
 
-**Remaining Clarifications**: None
+**Remaining Clarifications**: None (all resolved 2025-10-05)
 
 ---
 

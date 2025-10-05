@@ -28,7 +28,8 @@ This feature adds two major capabilities to the Comics Generator application:
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 ### Principle I: Open Standards & Portability
-- ✅ **PASS**: PDF uses standard format, images stored as PNG/JPG, chat history as JSON
+- ✅ **PASS**: PDF uses standard format, images stored as PNG/JPG, chat history as YAML
+- ✅ **PASS**: YAML preferred over JSON per constitution v1.0.1 (superior Git diffs, human readability)
 - ✅ **PASS**: Dual image storage (original + optimized) maintains archival quality
 - ✅ **PASS**: All data remains Git-compatible and human-reviewable
 
@@ -52,7 +53,7 @@ This feature adds two major capabilities to the Comics Generator application:
 ### Principle VI: Code Quality & Simplicity
 - ✅ **PASS**: PDFKit is Apple framework (justified for PDF generation complexity)
 - ✅ **PASS**: CoreImage for image resizing is standard library
-- ✅ **PASS**: No new external dependencies required
+- ✅ **PASS**: Yams library (Swift Package Manager) for YAML parsing - justified for constitution compliance
 
 ### Principle VII: User Experience Consistency
 - ✅ **PASS**: System file picker follows Apple HIG
@@ -309,14 +310,16 @@ No NEEDS CLARIFICATION markers remain in spec—all critical decisions resolved 
 - UI components → UI tests for acceptance scenarios
 
 **Ordering Strategy**:
-1. **Setup**: Enhance Asset model with chat history fields [P]
+1. **Setup**: Create models with YAML serialization support [P]
 2. **Tests**: Write contract tests for all 3 services [P]
 3. **Core**: Implement ImageOptimizationService [P], PDFExportService, AIChatService
-4. **Integration**: File persistence, chat history storage
+4. **Integration**: YAML persistence, chat history storage
 5. **UI**: PDFExportView, AssetImportButton, AIChatView [P]
 6. **Polish**: Error handling, loading states, quickstart validation
 
-**Estimated Output**: 18-22 tasks in tasks.md
+**Estimated Output**: ~40 tasks in tasks.md
+
+**Note**: No migration required - implementing with YAML from the start per constitution v1.0.1
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -357,4 +360,5 @@ No NEEDS CLARIFICATION markers remain in spec—all critical decisions resolved 
 - ✅ quickstart.md - Executable acceptance scenarios
 
 ---
-*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v1.0.1 - See `.specify/memory/constitution.md`*
+*Updated 2025-10-05: Constitution amended to prefer YAML over JSON for structured data*

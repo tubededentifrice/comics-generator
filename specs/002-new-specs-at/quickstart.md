@@ -221,11 +221,12 @@ sips -g pixelWidth -g pixelHeight optimized/abc123.png
 # Expected: 1024 x 768 (aspect ratio preserved, max dimension = 1024)
 ```
 
-**Asset JSON Verification**:
+**Asset YAML Verification**:
 ```bash
-cat asset.json | jq '.originalImages | length'  # Should be 2
-cat asset.json | jq '.optimizedImages | length' # Should be 2
-cat asset.json | jq '.originalImages[0].source' # Should be "imported"
+# Using yq (YAML processor) or manual inspection
+cat asset.yaml | grep -A 5 "originalImages"  # Should show 2 entries
+cat asset.yaml | grep -A 5 "optimizedImages" # Should show 2 entries
+cat asset.yaml | grep "source: imported"     # Should find 2 matches
 ```
 
 ### Success Criteria
@@ -234,7 +235,8 @@ cat asset.json | jq '.originalImages[0].source' # Should be "imported"
 - [x] `originals/` folder contains full-resolution files
 - [x] `optimized/` folder contains 1024px versions
 - [x] Aspect ratios preserved in optimized versions
-- [x] `asset.json` updated with ImageReferences
+- [x] `asset.yaml` updated with ImageReferences
+- [x] `prompt.txt` exported from promptText field
 - [x] Source type correctly set to "imported"
 - [x] Import completed in <200ms
 
@@ -349,23 +351,23 @@ cat asset.json | jq '.originalImages[0].source' # Should be "imported"
 cd ~/Documents/ComicsGenerator/Assets/character-asset
 
 # Chat history file exists
-ls -la .chat/history.json
-cat .chat/history.json | jq '.messages | length'  # Should be 2 (user + assistant)
+ls -la .chat/history.yaml
+cat .chat/history.yaml | grep "^  - id:" | wc -l  # Should be 2 (user + assistant messages)
 
 # Generated image imported
 ls originals/ | grep -c ".*"     # Count increased by 1
 ls optimized/ | grep -c ".*"     # Count increased by 1
 
 # Verify source type
-cat asset.json | jq '.originalImages[-1].source'  # Should be "generated"
+cat asset.yaml | grep -A 3 "originalImages:" | tail -1  # Should show "source: generated"
 ```
 
 **File System Check (After Step 12)**:
 ```bash
 # History file deleted or empty
-cat .chat/history.json | jq '.messages | length'  # Should be 0
+ls .chat/history.yaml  # File not found (expected behavior after clear)
 # OR
-ls .chat/history.json  # File not found (both valid)
+cat .chat/history.yaml | grep "messages: \[\]"  # Empty messages array (both valid)
 ```
 
 ### Success Criteria
@@ -456,8 +458,8 @@ time comics-generator-cli import --asset TestAsset --images *.png
 
 **Test**: Load chat with 100 messages
 ```bash
-# Create synthetic history.json with 100 messages
-python generate_test_history.py --count 100
+# Create synthetic history.yaml with 100 messages
+python generate_test_history.py --count 100 --format yaml
 
 # Measure load time
 time comics-generator-cli chat load --asset TestAsset
@@ -466,7 +468,7 @@ time comics-generator-cli chat load --asset TestAsset
 
 **Measurement**:
 - Profile `AIChatService.loadHistory`
-- Verify JSON decoding completes in target time
+- Verify YAML decoding completes in target time
 
 ---
 

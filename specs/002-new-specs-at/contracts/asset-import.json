@@ -52,7 +52,8 @@
       "sideEffects": [
         "Creates originals/{uuid}.{ext} file in asset folder",
         "Creates optimized/{uuid}.{ext} file in asset folder",
-        "Updates asset.json with new ImageReferences",
+        "Updates asset.yaml with new ImageReferences",
+        "Exports updated prompt.txt from asset.promptText",
         "Sets asset.updatedAt to current time"
       ],
       "performance": {
@@ -148,9 +149,9 @@
     "UniformTypeIdentifiers"
   ],
   "constitutional_compliance": {
-    "principle_I": "Images stored as standard PNG/JPG files",
+    "principle_I": "Images stored as standard PNG/JPG files, asset data in YAML",
     "principle_IV": "Contract tests required before implementation",
     "principle_V": "Performance targets specified (<100ms)",
-    "principle_VI": "Uses CoreImage (standard library)"
+    "principle_VI": "Uses CoreImage (standard library), Yams (SPM) for YAML"
   }
 }

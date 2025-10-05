@@ -24,22 +24,22 @@
 - Add `optimizedImages: [ImageReference]` property
 - Add `chatHistoryPath: URL?` property
 - Add `createdAt: Date` and `updatedAt: Date` properties
-- Update Codable conformance
+- Implement Codable conformance for YAML serialization (via Yams)
 - Add validation: `originalImages.count == optimizedImages.count`
-- Migration logic: convert old `images: [URL]` to new dual-storage format
+- No migration needed (implementing from scratch with YAML)
 
 **T003** [P] Create ImageReference model
 - File: `ComicsGenerator/Models/ImageReference.swift`
 - Properties: `id: UUID`, `url: URL`, `dimensions: CGSize`, `source: ImageSource`, `type: ImageVersionType`, `createdAt: Date`
 - Enums: `ImageSource` (imported/generated), `ImageVersionType` (original/optimized)
-- Codable conformance
+- Codable conformance for YAML serialization
 - Validation: optimized images max 1024px in longest dimension
 
 **T004** [P] Create ChatMessage model
 - File: `ComicsGenerator/Models/ChatMessage.swift`
 - Properties: `id: UUID`, `role: MessageRole`, `text: String`, `attachedImages: [URL]`, `generatedImages: [URL]`, `timestamp: Date`
 - Enum: `MessageRole` (user/assistant)
-- Codable conformance
+- Codable conformance for YAML serialization
 - Validation rules per data-model.md (user/assistant constraints)
 
 **T005** [P] Create PDFExportOptions model
@@ -48,6 +48,17 @@
 - Enum: `PageRange` (all, single(pageIndex: Int))
 - Defaults: resolution=300, includeMetadata=true
 - Validation: outputURL must be writable
+
+**T005a** [P] Implement prompt.txt export utility
+- File: `ComicsGenerator/Services/PromptExportService.swift`
+- Method: `exportPromptText(asset: Asset) -> URL`
+- Writes asset.promptText to `{asset-folder}/prompt.txt`
+- Called automatically after each asset save
+- Plain text format for easy viewing/sharing
+- File: `ComicsGeneratorTests/Unit/PromptExportServiceTests.swift`
+- Test: `testExportPromptText_createsTextFile()`
+- Test: `testExportPromptText_updatesOnSave()`
+- Test: `testExportPromptText_handlesEmptyPrompt()`
 
 ## Phase 3.2: Contract Tests (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 
@@ -158,9 +169,9 @@
 
 **T018** Implement AIChatService history persistence methods
 - File: `ComicsGenerator/Services/AIChatService.swift` (add to existing)
-- `loadHistory`: Read `.chat/history.json`, decode to [ChatMessage]
-- `saveHistory`: Atomic write (temp file + move), pretty-printed JSON
-- `clearHistory`: Delete history.json, set chatHistoryPath = nil
+- `loadHistory`: Read `.chat/history.yaml`, decode to [ChatMessage] using Yams
+- `saveHistory`: Atomic write (temp file + move), human-readable YAML format
+- `clearHistory`: Delete history.yaml, set chatHistoryPath = nil
 - Create `.chat/` directory if missing
 - Target: <50ms for 100 messages
 - Make tests T011 PASS
@@ -189,14 +200,15 @@
 - Import 2 sample images (PNG, JPG)
 - Verify: `originals/` and `optimized/` folders contain files
 - Verify: Optimized versions max 1024px
-- Verify: asset.json updated with ImageReferences
+- Verify: asset.yaml updated with ImageReferences
+- Verify: prompt.txt exported
 - Follow quickstart.md Scenario 3
 
 **T022** [P] Integration test: AI chat persistence (Quickstart Scenario 4)
 - File: `ComicsGeneratorTests/Integration/AIChatPersistenceTests.swift`
 - Create asset, send 5 chat messages (mocked AI responses)
 - Save history
-- Verify: `.chat/history.json` exists and valid
+- Verify: `.chat/history.yaml` exists and valid
 - Load history in new session
 - Verify: All 5 messages loaded correctly
 - Clear history, verify: file deleted or empty
@@ -294,6 +306,11 @@
 - Verify: "Import to Asset" action shown
 - Tap import
 - Verify: Image added to asset editor
+- **NEW**: Verify: Image shows "Generated" source indicator badge (blue)
+- **NEW**: Return to asset editor main view
+- **NEW**: Import external image via file picker
+- **NEW**: Verify: Imported image shows "Imported" source indicator badge (green)
+- **NEW**: Verify: Both badges visible in asset reference collection
 
 ## Phase 3.7: Polish & Performance
 
@@ -314,17 +331,20 @@
 
 **T035** [P] Performance test: Chat history loading
 - File: `ComicsGeneratorTests/Unit/AIChatServiceTests.swift` (add to existing)
-- Generate synthetic history.json with 100 messages
+- Generate synthetic history.yaml with 100 messages
 - Measure: loadHistory() execution time
 - Assert: <50ms total
 - Assert: Messages sorted by timestamp
 
-**T036** Error handling: Missing API key
+**T036** Error handling: Missing API key and unsupported formats
 - File: `ComicsGenerator/Services/AIChatService.swift` (enhance existing)
 - When sendMessage() called without API key configured
 - Show clear error: "No API key configured for [provider]"
 - Add link to Settings (per FR-043a)
 - Add test case to AIChatServiceTests
+- **NEW**: Add format validation in image upload handler
+- **NEW**: When unsupported format uploaded, show error: "Unsupported format: [format]. Supported formats: PNG, JPG, JPEG, HEIC, SVG"
+- **NEW**: Add test case: `testImageUpload_unsupportedFormat_showsError()`
 
 **T037** Error handling: File system errors
 - Files: All services (PDFExportService, AssetImportService, AIChatService)
