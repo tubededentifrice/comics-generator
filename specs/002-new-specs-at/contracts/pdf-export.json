@@ -1,0 +1,97 @@
+{
+  "service": "PDFExportService",
+  "version": "1.0.0",
+  "description": "Service for exporting albums and pages to PDF format at 300 DPI with metadata",
+  "methods": [
+    {
+      "name": "exportAlbum",
+      "description": "Exports all pages of an album to a single PDF file",
+      "input": {
+        "album": {
+          "type": "Album",
+          "description": "Album containing pages to export",
+          "required": true
+        },
+        "options": {
+          "type": "PDFExportOptions",
+          "description": "Export configuration (resolution, metadata, output path)",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "URL",
+        "description": "File URL of generated PDF"
+      },
+      "throws": [
+        {
+          "type": "PDFExportError.invalidAlbum",
+          "condition": "Album has no pages"
+        },
+        {
+          "type": "PDFExportError.renderingFailed",
+          "condition": "Page rendering failed (corrupt drawing data)"
+        },
+        {
+          "type": "PDFExportError.writeError",
+          "condition": "Cannot write to output URL"
+        },
+        {
+          "type": "PDFExportError.insufficientPermissions",
+          "condition": "Output directory not writable"
+        }
+      ],
+      "performance": {
+        "target": "<200ms per page for typical drawings",
+        "constraint": "Off main thread execution"
+      }
+    },
+    {
+      "name": "exportPage",
+      "description": "Exports a single page to PDF file",
+      "input": {
+        "page": {
+          "type": "Page",
+          "description": "Page to export",
+          "required": true
+        },
+        "options": {
+          "type": "PDFExportOptions",
+          "description": "Export configuration",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "URL",
+        "description": "File URL of generated PDF"
+      },
+      "throws": [
+        {
+          "type": "PDFExportError.invalidPage",
+          "condition": "Page has no layout"
+        },
+        {
+          "type": "PDFExportError.renderingFailed",
+          "condition": "Drawing rendering failed"
+        },
+        {
+          "type": "PDFExportError.writeError",
+          "condition": "Cannot write to output URL"
+        }
+      ],
+      "performance": {
+        "target": "<200ms for typical page",
+        "constraint": "Renders at 300 DPI as specified in options"
+      }
+    }
+  ],
+  "dependencies": [
+    "PDFKit",
+    "CoreGraphics",
+    "Foundation"
+  ],
+  "constitutional_compliance": {
+    "principle_I": "PDF is open standard format",
+    "principle_IV": "Contract tests required before implementation",
+    "principle_V": "Performance targets specified"
+  }
+}

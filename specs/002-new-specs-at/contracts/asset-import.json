@@ -1,0 +1,157 @@
+{
+  "service": "AssetImportService",
+  "version": "1.0.0",
+  "description": "Service for importing external images into assets with dual-resolution storage",
+  "methods": [
+    {
+      "name": "importImages",
+      "description": "Imports images from file URLs, creating both original and optimized versions",
+      "input": {
+        "imageURLs": {
+          "type": "[URL]",
+          "description": "Array of file URLs to import (PNG, JPG, JPEG, HEIC, SVG)",
+          "required": true,
+          "constraints": {
+            "minCount": 1,
+            "maxCount": 50,
+            "supportedFormats": ["png", "jpg", "jpeg", "heic", "svg"]
+          }
+        },
+        "asset": {
+          "type": "Asset",
+          "description": "Target asset to add images to",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "[ImageReference]",
+        "description": "Array of created image references (original + optimized pairs)"
+      },
+      "throws": [
+        {
+          "type": "AssetImportError.unsupportedFormat",
+          "condition": "Image format not in supported list"
+        },
+        {
+          "type": "AssetImportError.imageLoadFailed",
+          "condition": "Cannot read image data from URL"
+        },
+        {
+          "type": "AssetImportError.assetFull",
+          "condition": "Asset already has 50 images (max limit)"
+        },
+        {
+          "type": "AssetImportError.fileSystemError",
+          "condition": "Cannot write to asset folder"
+        },
+        {
+          "type": "AssetImportError.optimizationFailed",
+          "condition": "Image optimization failed (corrupt data)"
+        }
+      ],
+      "sideEffects": [
+        "Creates originals/{uuid}.{ext} file in asset folder",
+        "Creates optimized/{uuid}.{ext} file in asset folder",
+        "Updates asset.yaml with new ImageReferences",
+        "Exports updated prompt.txt from asset.promptText",
+        "Sets asset.updatedAt to current time"
+      ],
+      "performance": {
+        "target": "<100ms per image",
+        "constraint": "Batch processing with max 4 concurrent operations"
+      }
+    },
+    {
+      "name": "optimizeImage",
+      "description": "Creates 1024px optimized version of an image",
+      "input": {
+        "sourceURL": {
+          "type": "URL",
+          "description": "Source image file URL",
+          "required": true
+        },
+        "maxDimension": {
+          "type": "Int",
+          "description": "Maximum dimension in pixels (fixed at 1024)",
+          "required": true,
+          "constraints": {
+            "value": 1024
+          }
+        }
+      },
+      "output": {
+        "type": "URL",
+        "description": "File URL of optimized image"
+      },
+      "throws": [
+        {
+          "type": "ImageOptimizationError.invalidSource",
+          "condition": "Source file not readable or corrupt"
+        },
+        {
+          "type": "ImageOptimizationError.resizeFailed",
+          "condition": "CoreImage filter failed"
+        },
+        {
+          "type": "ImageOptimizationError.writeFailed",
+          "condition": "Cannot write optimized file"
+        }
+      ],
+      "behavior": {
+        "aspectRatio": "Preserved (scales longest dimension to maxDimension)",
+        "format": "Same as source (PNG→PNG, JPG→JPG)",
+        "quality": "Lanczos resampling for high quality"
+      },
+      "performance": {
+        "target": "<100ms per image",
+        "constraint": "GPU-accelerated via CoreImage"
+      }
+    },
+    {
+      "name": "removeImage",
+      "description": "Removes an image from asset (both original and optimized)",
+      "input": {
+        "imageReference": {
+          "type": "ImageReference",
+          "description": "Image to remove",
+          "required": true
+        },
+        "asset": {
+          "type": "Asset",
+          "description": "Asset owning the image",
+          "required": true
+        }
+      },
+      "output": {
+        "type": "Void"
+      },
+      "throws": [
+        {
+          "type": "AssetImportError.imageNotFound",
+          "condition": "Image not in asset's image collection"
+        },
+        {
+          "type": "AssetImportError.fileSystemError",
+          "condition": "Cannot delete files"
+        }
+      ],
+      "sideEffects": [
+        "Deletes originals/{id}.{ext} file",
+        "Deletes optimized/{id}.{ext} file",
+        "Removes from asset.originalImages and asset.optimizedImages",
+        "Updates asset.updatedAt"
+      ]
+    }
+  ],
+  "dependencies": [
+    "CoreImage",
+    "Foundation",
+    "UniformTypeIdentifiers"
+  ],
+  "constitutional_compliance": {
+    "principle_I": "Images stored as standard PNG/JPG files, asset data in YAML",
+    "principle_IV": "Contract tests required before implementation",
+    "principle_V": "Performance targets specified (<100ms)",
+    "principle_VI": "Uses CoreImage (standard library), Yams (SPM) for YAML"
+  }
+}
